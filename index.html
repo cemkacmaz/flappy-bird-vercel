@@ -1,372 +1,455 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Flappy Bird</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-        #root {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-        .game-container {
-            position: relative;
-            width: 320px;
-            height: 480px;
-            background-color: #70c5ce;
-            overflow: hidden;
-            border: 2px solid #333;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        .bird {
-            position: absolute;
-            width: 30px;
-            height: 24px;
-            background-color: yellow;
-            border-radius: 50%;
-            border: 2px solid orange;
-            left: 50px;
-            transition: background-color 0.1s ease-in-out;
-        }
-        .bird.flapping {
-            background-color: gold;
-        }
-        .pipe {
-            position: absolute;
-            width: 50px;
-            background-color: green;
-            border: 2px solid darkgreen;
-        }
-        .pipe.top {
-            border-bottom: none;
-        }
-        .pipe.bottom {
-            border-top: none;
-        }
-        .ground {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 50px;
-            background-color: #ded895;
-            border-top: 2px solid #c4b873;
-        }
-        .score {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            text-align: center;
-            font-size: 3em;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-            z-index: 10;
-        }
-        .game-over-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 2em;
-            text-align: center;
-            z-index: 100;
-        }
-        .game-over-screen h2 {
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-        .game-over-screen button {
-            padding: 10px 20px;
-            font-size: 0.8em;
-            cursor: pointer;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .game-over-screen button:hover {
-            background-color: #218838;
-        }
-        .start-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 1.5em;
-            text-align: center;
-            z-index: 100;
-        }
-        .start-screen button {
-            padding: 10px 20px;
-            font-size: 1em;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .start-screen button:hover {
-            background-color: #0056b3;
-        }
-        @keyframes pipe-move {
-            from { transform: translateX(0); }
-            to { transform: translateX(-370px); /* 320px (game width) + 50px (pipe width) */ }
-        }
-    </style>
+  <title>Flappy Bird</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: manipulation;
+      background: #70c5ce;
+    }
+
+    /* Fullscreen container: modern iOS uses dvh; fallback uses --app-height set by JS */
+    #root,
+    .game-container {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;                  /* iOS 16+ / modern browsers */
+      height: var(--app-height, 100vh); /* fallback for iOS WebView quirks */
+      overflow: hidden;
+    }
+
+    .game-container {
+      position: relative;
+      background-color: #70c5ce;
+
+      /* Edge-to-edge support (notch/home indicator). Remove these paddings if you prefer safe-area only. */
+      padding-top: env(safe-area-inset-top);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+    }
+
+    .bird {
+      position: absolute;
+      width: 8vw;
+      height: 6vw;
+      max-width: 40px;
+      max-height: 32px;
+      min-width: 24px;
+      min-height: 18px;
+      background-color: yellow;
+      border-radius: 50%;
+      border: 2px solid orange;
+      left: 15%;
+      transition: background-color 0.1s ease-in-out;
+    }
+    .bird.flapping { background-color: gold; }
+
+    .pipe {
+      position: absolute;
+      width: 12vw;
+      max-width: 60px;
+      min-width: 40px;
+      background-color: green;
+      border: 2px solid darkgreen;
+    }
+    .pipe.top { border-bottom: none; }
+    .pipe.bottom { border-top: none; }
+
+    .ground {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 10vh;
+      max-height: 60px;
+      min-height: 40px;
+      background-color: #ded895;
+      border-top: 2px solid #c4b873;
+    }
+
+    .score {
+      position: absolute;
+      top: 5vh;
+      width: 100%;
+      text-align: center;
+      font-size: 10vw;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .game-over-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 6vw;
+      text-align: center;
+      z-index: 100;
+    }
+    .game-over-screen h2 {
+      margin-bottom: 20px;
+      font-size: 8vw;
+    }
+    .game-over-screen button {
+      padding: 15px 30px;
+      font-size: 5vw;
+      cursor: pointer;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+    }
+
+    .start-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 5vw;
+      text-align: center;
+      z-index: 100;
+    }
+    .start-screen h1 { font-size: 10vw; }
+    .start-screen button {
+      padding: 15px 30px;
+      font-size: 5vw;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+    }
+  </style>
 </head>
+
 <body>
-    <div id="root"></div>
+  <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef, useCallback } = React;
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
 
-        const BIRD_SIZE = 24;
-        const GAME_WIDTH = 320;
-        const GAME_HEIGHT = 480;
-        const GRAVITY = 0.5;
-        const JUMP_STRENGTH = -8;
-        const PIPE_WIDTH = 50;
-        const PIPE_GAP = 120;
-        const GROUND_HEIGHT = 50;
-        const PIPE_SPEED = 2;
-        const PIPE_SPAWN_INTERVAL = 2000; // ms
+    // Fix iOS WebView viewport height quirks by tracking real innerHeight
+    const setAppHeight = () => {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    };
+    setAppHeight();
+    window.addEventListener('resize', setAppHeight);
+    window.addEventListener('orientationchange', setAppHeight);
 
-        const FlappyBird = () => {
-            const [birdPosition, setBirdPosition] = useState(GAME_HEIGHT / 2 - BIRD_SIZE / 2);
-            const [pipes, setPipes] = useState([]);
-            const [score, setScore] = useState(0);
-            const [gameOver, setGameOver] = useState(false);
-            const [gameStarted, setGameStarted] = useState(false);
-            const [flapping, setFlapping] = useState(false);
+    const getGameDimensions = () => {
+      // visualViewport is often more accurate on mobile Safari / WKWebView
+      const vv = window.visualViewport;
+      return {
+        width: Math.round(vv?.width ?? window.innerWidth),
+        height: Math.round(vv?.height ?? window.innerHeight)
+      };
+    };
 
-            const gameIntervalRef = useRef(null);
-            const pipeSpawnIntervalRef = useRef(null);
-            const birdVelocityRef = useRef(0);
+    const FlappyBird = () => {
+      const [dimensions, setDimensions] = useState(getGameDimensions());
+      const GAME_WIDTH = dimensions.width;
+      const GAME_HEIGHT = dimensions.height;
 
-            const resetGame = useCallback(() => {
-                setBirdPosition(GAME_HEIGHT / 2 - BIRD_SIZE / 2);
-                setPipes([]);
-                setScore(0);
-                setGameOver(false);
-                birdVelocityRef.current = 0;
-                if (gameIntervalRef.current) clearInterval(gameIntervalRef.current);
-                if (pipeSpawnIntervalRef.current) clearInterval(pipeSpawnIntervalRef.current);
-            }, []);
+      // Scale factors based on viewport
+      const SCALE = Math.min(GAME_WIDTH / 320, GAME_HEIGHT / 480);
+      const BIRD_SIZE = Math.max(24, Math.min(40, 30 * SCALE));
+      const GRAVITY = 0.5 * SCALE;
+      const JUMP_STRENGTH = -8 * SCALE;
+      const PIPE_WIDTH = Math.max(40, Math.min(60, 50 * SCALE));
+      const PIPE_GAP = 120 * SCALE;
+      const GROUND_HEIGHT = Math.max(40, Math.min(60, 50 * SCALE));
+      const PIPE_SPEED = 2 * SCALE;
+      const PIPE_SPAWN_INTERVAL = 2000;
+      const BIRD_X = GAME_WIDTH * 0.15;
 
-            const startGame = useCallback(() => {
-                resetGame();
-                setGameStarted(true);
-                birdVelocityRef.current = 0; // Reset velocity when starting
+      const [birdPosition, setBirdPosition] = useState(GAME_HEIGHT / 2 - BIRD_SIZE / 2);
+      const [pipes, setPipes] = useState([]);
+      const [score, setScore] = useState(0);
+      const [gameOver, setGameOver] = useState(false);
+      const [gameStarted, setGameStarted] = useState(false);
+      const [flapping, setFlapping] = useState(false);
 
-                gameIntervalRef.current = setInterval(() => {
-                    setBirdPosition(prev => {
-                        let newBirdPos = prev + birdVelocityRef.current;
-                        birdVelocityRef.current += GRAVITY;
-                        return Math.max(0, newBirdPos);
-                    });
+      const gameIntervalRef = useRef(null);
+      const pipeSpawnIntervalRef = useRef(null);
+      const birdVelocityRef = useRef(0);
 
-                    setPipes(prevPipes => {
-                        const newPipes = prevPipes.map(pipe => ({
-                            ...pipe,
-                            x: pipe.x - PIPE_SPEED
-                        })).filter(pipe => pipe.x > -PIPE_WIDTH);
-                        return newPipes;
-                    });
+      useEffect(() => {
+        const handleResize = () => setDimensions(getGameDimensions());
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+        return () => {
+          window.removeEventListener('resize', handleResize);
+          window.removeEventListener('orientationchange', handleResize);
+        };
+      }, []);
 
-                    setScore(prevScore => {
-                        const passedPipe = pipes.find(pipe =>
-                            pipe.x < GAME_WIDTH / 2 - PIPE_WIDTH / 2 &&
-                            pipe.x + PIPE_SPEED >= GAME_WIDTH / 2 - PIPE_WIDTH / 2 &&
-                            !pipe.counted
-                        );
-                        if (passedPipe) {
-                            // Mark pipe as counted to avoid multiple score increments
-                            setPipes(prev => prev.map(p => p.id === passedPipe.id ? { ...p, counted: true } : p));
-                            return prevScore + 1;
-                        }
-                        return prevScore;
-                    });
+      useEffect(() => {
+        // Keep bird centered nicely if viewport changes before starting.
+        if (!gameStarted) {
+          setBirdPosition(GAME_HEIGHT / 2 - BIRD_SIZE / 2);
+        }
+      }, [GAME_HEIGHT, BIRD_SIZE, gameStarted]);
 
-                }, 20); // Game loop interval
+      const resetGame = useCallback(() => {
+        setBirdPosition(GAME_HEIGHT / 2 - BIRD_SIZE / 2);
+        setPipes([]);
+        setScore(0);
+        setGameOver(false);
+        birdVelocityRef.current = 0;
+        if (gameIntervalRef.current) clearInterval(gameIntervalRef.current);
+        if (pipeSpawnIntervalRef.current) clearInterval(pipeSpawnIntervalRef.current);
+      }, [GAME_HEIGHT, BIRD_SIZE]);
 
-                pipeSpawnIntervalRef.current = setInterval(() => {
-                    const minHeight = 50;
-                    const maxHeight = GAME_HEIGHT - GROUND_HEIGHT - PIPE_GAP - 50;
-                    const topPipeHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+      const startGame = useCallback(() => {
+        resetGame();
+        setGameStarted(true);
+        birdVelocityRef.current = 0;
 
-                    setPipes(prevPipes => [
-                        ...prevPipes,
-                        {
-                            id: Date.now() + '-top',
-                            x: GAME_WIDTH,
-                            height: topPipeHeight,
-                            isTop: true,
-                            counted: false
-                        },
-                        {
-                            id: Date.now() + '-bottom',
-                            x: GAME_WIDTH,
-                            height: GAME_HEIGHT - GROUND_HEIGHT - topPipeHeight - PIPE_GAP,
-                            isTop: false,
-                            counted: false
-                        }
-                    ]);
-                }, PIPE_SPAWN_INTERVAL);
+        gameIntervalRef.current = setInterval(() => {
+          setBirdPosition(prev => {
+            const newBirdPos = prev + birdVelocityRef.current;
+            birdVelocityRef.current += GRAVITY;
+            return Math.max(0, newBirdPos);
+          });
 
-            }, [pipes, resetGame]);
+          setPipes(prevPipes => {
+            const updated = prevPipes
+              .map(pipe => ({ ...pipe, x: pipe.x - PIPE_SPEED }))
+              .filter(pipe => pipe.x > -PIPE_WIDTH);
+            return updated;
+          });
 
-            const jump = useCallback(() => {
-                if (!gameOver && gameStarted) {
-                    birdVelocityRef.current = JUMP_STRENGTH;
-                    setFlapping(true);
-                    setTimeout(() => setFlapping(false), 100); // Flap animation duration
-                }
-            }, [gameOver, gameStarted]);
+          // NOTE: Using setScore based on current pipes can be tricky due to closure.
+          // We'll compute scoring inside setPipes instead for correctness.
+          setPipes(prevPipes => {
+            let scored = false;
 
-            useEffect(() => {
-                if (!gameStarted || gameOver) return;
+            const updated = prevPipes
+              .map(pipe => ({ ...pipe, x: pipe.x - 0 })) // no-op; x handled above (kept to preserve structure)
+              .map(pipe => pipe);
 
-                const handleKeyPress = (e) => {
-                    if (e.code === 'Space') {
-                        jump();
-                    }
-                };
-
-                window.addEventListener('keydown', handleKeyPress);
-                return () => {
-                    window.removeEventListener('keydown', handleKeyPress);
-                };
-            }, [jump, gameStarted, gameOver]);
-
-            useEffect(() => {
-                if (!gameStarted || gameOver) return;
-
-                // Check for collisions
-                const currentBirdPosition = birdPosition;
-                const currentBirdBottom = currentBirdPosition + BIRD_SIZE;
-
-                // Ground collision
-                if (currentBirdBottom >= GAME_HEIGHT - GROUND_HEIGHT) {
-                    setGameOver(true);
-                    return;
-                }
-
-                // Pipe collision
-                for (let i = 0; i < pipes.length; i++) {
-                    const pipe = pipes[i];
-
-                    const birdX = 50;
-                    const birdRight = birdX + BIRD_SIZE;
-
-                    const pipeLeft = pipe.x;
-                    const pipeRight = pipe.x + PIPE_WIDTH;
-
-                    if (birdRight > pipeLeft && birdX < pipeRight) {
-                        // Bird is horizontally aligned with the pipe
-                        if (pipe.isTop) {
-                            if (currentBirdPosition < pipe.height) {
-                                setGameOver(true);
-                                return;
-                            }
-                        } else {
-                            // Bottom pipe
-                            const bottomPipeTop = GAME_HEIGHT - GROUND_HEIGHT - pipe.height;
-                            if (currentBirdBottom > bottomPipeTop) {
-                                setGameOver(true);
-                                return;
-                            }
-                        }
-                    }
-                }
-            }, [birdPosition, pipes, gameStarted, gameOver]);
-
-            useEffect(() => {
-                if (gameOver) {
-                    clearInterval(gameIntervalRef.current);
-                    clearInterval(pipeSpawnIntervalRef.current);
-                }
-            }, [gameOver]);
-
-            const handleTapOrClick = useCallback(() => {
-                if (gameOver) {
-                    startGame();
-                } else if (gameStarted) {
-                    jump();
-                } else {
-                    startGame();
-                }
-            }, [gameOver, gameStarted, jump, startGame]);
-
-            return (
-                <div className="game-container" onClick={handleTapOrClick}>
-                    {!gameStarted && (
-                        <div className="start-screen">
-                            <h1>Flappy Bird</h1>
-                            <p>Click or press SPACE to start</p>
-                            <button onClick={startGame}>Start Game</button>
-                        </div>
-                    )}
-
-                    {gameStarted && !gameOver && <div className="score">{score}</div>}
-
-                    <div
-                        className={`bird ${flapping ? 'flapping' : ''}`}
-                        style={{
-                            top: birdPosition,
-                        }}
-                    />
-
-                    {pipes.map(pipe => (
-                        <div
-                            key={pipe.id}
-                            className={`pipe ${pipe.isTop ? 'top' : 'bottom'}`}
-                            style={{
-                                left: pipe.x,
-                                height: pipe.height,
-                                top: pipe.isTop ? 0 : GAME_HEIGHT - GROUND_HEIGHT - pipe.height,
-                            }}
-                        />
-                    ))}
-
-                    <div className="ground" />
-
-                    {gameOver && (
-                        <div className="game-over-screen">
-                            <h2>Game Over!</h2>
-                            <p>Your Score: {score}</p>
-                            <button onClick={startGame}>Play Again</button>
-                        </div>
-                    )}
-                </div>
+            // Find a top pipe passing the bird (count only once per pair)
+            const candidate = prevPipes.find(p =>
+              p.isTop &&
+              p.x < BIRD_X &&
+              p.x + PIPE_SPEED >= BIRD_X &&
+              !p.counted
             );
+
+            if (candidate) {
+              scored = true;
+            }
+
+            if (scored) {
+              setScore(s => s + 1);
+              return prevPipes.map(p =>
+                (p.isTop && p.id === candidate.id) ? { ...p, counted: true } : p
+              );
+            }
+
+            return prevPipes;
+          });
+
+        }, 20);
+
+        pipeSpawnIntervalRef.current = setInterval(() => {
+          const minHeight = 50 * SCALE;
+          const maxHeight = GAME_HEIGHT - GROUND_HEIGHT - PIPE_GAP - 50 * SCALE;
+          const topPipeHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+
+          const baseId = Date.now().toString();
+
+          setPipes(prevPipes => ([
+            ...prevPipes,
+            {
+              id: baseId + '-top',
+              x: GAME_WIDTH,
+              height: topPipeHeight,
+              isTop: true,
+              counted: false
+            },
+            {
+              id: baseId + '-bottom',
+              x: GAME_WIDTH,
+              height: GAME_HEIGHT - GROUND_HEIGHT - topPipeHeight - PIPE_GAP,
+              isTop: false,
+              counted: false
+            }
+          ]));
+        }, PIPE_SPAWN_INTERVAL);
+
+      }, [
+        resetGame,
+        GRAVITY,
+        PIPE_SPEED,
+        PIPE_WIDTH,
+        BIRD_X,
+        SCALE,
+        GAME_WIDTH,
+        GAME_HEIGHT,
+        GROUND_HEIGHT,
+        PIPE_GAP
+      ]);
+
+      const jump = useCallback(() => {
+        if (!gameOver && gameStarted) {
+          birdVelocityRef.current = JUMP_STRENGTH;
+          setFlapping(true);
+          setTimeout(() => setFlapping(false), 100);
+        }
+      }, [gameOver, gameStarted, JUMP_STRENGTH]);
+
+      useEffect(() => {
+        if (!gameStarted || gameOver) return;
+
+        const handleKeyPress = (e) => {
+          if (e.code === 'Space') jump();
         };
 
-        ReactDOM.render(<FlappyBird />, document.getElementById('root'));
-    </script>
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+      }, [jump, gameStarted, gameOver]);
+
+      useEffect(() => {
+        if (!gameStarted || gameOver) return;
+
+        const currentBirdTop = birdPosition;
+        const currentBirdBottom = currentBirdTop + BIRD_SIZE;
+
+        // Ground collision
+        if (currentBirdBottom >= GAME_HEIGHT - GROUND_HEIGHT) {
+          setGameOver(true);
+          return;
+        }
+
+        // Pipe collision
+        for (const pipe of pipes) {
+          const birdRight = BIRD_X + BIRD_SIZE;
+          const pipeLeft = pipe.x;
+          const pipeRight = pipe.x + PIPE_WIDTH;
+
+          if (birdRight > pipeLeft && BIRD_X < pipeRight) {
+            if (pipe.isTop) {
+              if (currentBirdTop < pipe.height) {
+                setGameOver(true);
+                return;
+              }
+            } else {
+              const bottomPipeTop = GAME_HEIGHT - GROUND_HEIGHT - pipe.height;
+              if (currentBirdBottom > bottomPipeTop) {
+                setGameOver(true);
+                return;
+              }
+            }
+          }
+        }
+      }, [birdPosition, pipes, gameStarted, gameOver, BIRD_SIZE, BIRD_X, GAME_HEIGHT, GROUND_HEIGHT, PIPE_WIDTH]);
+
+      useEffect(() => {
+        if (gameOver) {
+          clearInterval(gameIntervalRef.current);
+          clearInterval(pipeSpawnIntervalRef.current);
+        }
+      }, [gameOver]);
+
+      const handleTapOrClick = useCallback(() => {
+        if (gameOver) {
+          startGame();
+        } else if (gameStarted) {
+          jump();
+        } else {
+          startGame();
+        }
+      }, [gameOver, gameStarted, jump, startGame]);
+
+      return (
+        <div className="game-container" onClick={handleTapOrClick}>
+          {!gameStarted && (
+            <div className="start-screen">
+              <h1>Flappy Bird</h1>
+              <p>Tap to start</p>
+              <button onClick={startGame}>Start Game</button>
+            </div>
+          )}
+
+          {gameStarted && !gameOver && <div className="score">{score}</div>}
+
+          <div
+            className={`bird ${flapping ? 'flapping' : ''}`}
+            style={{
+              top: birdPosition,
+              width: BIRD_SIZE,
+              height: BIRD_SIZE * 0.8,
+              left: BIRD_X,
+            }}
+          />
+
+          {pipes.map(pipe => (
+            <div
+              key={pipe.id}
+              className={`pipe ${pipe.isTop ? 'top' : 'bottom'}`}
+              style={{
+                left: pipe.x,
+                width: PIPE_WIDTH,
+                height: pipe.height,
+                top: pipe.isTop ? 0 : GAME_HEIGHT - GROUND_HEIGHT - pipe.height,
+              }}
+            />
+          ))}
+
+          <div className="ground" style={{ height: GROUND_HEIGHT }} />
+
+          {gameOver && (
+            <div className="game-over-screen">
+              <h2>Game Over!</h2>
+              <p>Your Score: {score}</p>
+              <button onClick={startGame}>Play Again</button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // React 18 mount
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<FlappyBird />);
+  </script>
 </body>
 </html>
